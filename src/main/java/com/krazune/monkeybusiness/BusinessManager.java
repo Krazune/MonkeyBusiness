@@ -1,35 +1,63 @@
 package com.krazune.monkeybusiness;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.inject.Inject;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.Model;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.eventbus.Subscribe;
 
 public class BusinessManager
 {
 	private Client client;
 
+	private EventBus eventBus;
+
 	private MonkeyBusinessPluginConfig config;
 
-	private Set<RuneLiteObject> businessObjects;
 	private Map<Integer, Map<Integer, Map<Integer, RuneLiteObject>>> businessObjectsWorldPointMap; // X, Y, and Plane.
 
 	@Inject
-	public BusinessManager(Client client, MonkeyBusinessPluginConfig config)
+	public BusinessManager(Client client, EventBus eventBus, MonkeyBusinessPluginConfig config)
 	{
 		this.client = client;
+		this.eventBus = eventBus;
 		this.config = config;
 
-		businessObjects = new HashSet<>();
+		this.eventBus.register(this);
+
 		businessObjectsWorldPointMap = new HashMap<>();
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		if (gameStateChanged.getGameState() != GameState.LOGGED_IN)
+		{
+			return;
+		}
+
+		for (Integer x : businessObjectsWorldPointMap.keySet())
+		{
+			Map<Integer, Map<Integer, RuneLiteObject>> yMap = businessObjectsWorldPointMap.get(x);
+
+			for (Integer y : yMap.keySet())
+			{
+				Map<Integer, RuneLiteObject> planeMap = yMap.get(y);
+
+				for (Integer plane : planeMap.keySet())
+				{
+					createRandomBusinessObject(new WorldPoint(x, y, plane));
+				}
+			}
+		}
 	}
 
 	public void doBusiness(WorldPoint worldPoint)
@@ -39,25 +67,12 @@ public class BusinessManager
 			return;
 		}
 
-		// WIP
-		int modelId = getRandomModelIdOrNothing();
-
-		if (modelId == -1)
-		{
-			return;
-		}
-
-		RuneLiteObject newBusinessObject = createBusinessObject(modelId);
+		RuneLiteObject newBusinessObject = createRandomBusinessObject(worldPoint);
 
 		if (newBusinessObject == null)
 		{
 			return;
 		}
-
-		LocalPoint newBusinessLocalPoint = LocalPoint.fromWorld(client, worldPoint);
-
-		newBusinessObject.setLocation(newBusinessLocalPoint, worldPoint.getPlane());
-		newBusinessObject.setActive(true);
 
 		cacheBusinessObject(newBusinessObject);
 	}
@@ -96,14 +111,6 @@ public class BusinessManager
 
 	public void clearAll()
 	{
-		Iterator i = businessObjects.iterator();
-
-		while (i.hasNext())
-		{
-			((RuneLiteObject)i.next()).setActive(false);
-		}
-
-		businessObjects = new HashSet<>();
 		businessObjectsWorldPointMap = new HashMap<>();
 	}
 
@@ -135,8 +142,16 @@ public class BusinessManager
 		return yMapping.get(plane);
 	}
 
-	private RuneLiteObject createBusinessObject(int modelId)
+	// This function is not very well thought out, but it will do for now.
+	private RuneLiteObject createRandomBusinessObject(WorldPoint worldPoint)
 	{
+		int modelId = getRandomModelIdOrNothing();
+
+		if (modelId == -1)
+		{
+			return null;
+		}
+
 		RuneLiteObject newBusinessObject = client.createRuneLiteObject();
 		Model newBusinessModel = client.loadModel(modelId);
 
@@ -147,21 +162,25 @@ public class BusinessManager
 
 		newBusinessObject.setModel(newBusinessModel);
 
+		if (newBusinessObject == null)
+		{
+			return null;
+		}
+
+		LocalPoint newBusinessLocalPoint = LocalPoint.fromWorld(client, worldPoint);
+
+		if (newBusinessLocalPoint == null)
+		{
+			return null;
+		}
+
+		newBusinessObject.setLocation(newBusinessLocalPoint, worldPoint.getPlane());
+		newBusinessObject.setActive(true);
+
 		return newBusinessObject;
 	}
 
 	private void cacheBusinessObject(RuneLiteObject newBusinessObject)
-	{
-		addToBusinessObjects(newBusinessObject);
-		addToBusinessObjectsWorldPointMap(newBusinessObject);
-	}
-
-	private void addToBusinessObjects(RuneLiteObject newBusinessObject)
-	{
-		businessObjects.add(newBusinessObject);
-	}
-
-	private void addToBusinessObjectsWorldPointMap(RuneLiteObject newBusinessObject)
 	{
 		WorldPoint newBusinessObjectWorldPoint = WorldPoint.fromLocal(client, newBusinessObject.getLocation());
 
