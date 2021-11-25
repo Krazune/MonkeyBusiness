@@ -54,7 +54,7 @@ public class BusinessManager
 
 				for (Integer plane : planeMap.keySet())
 				{
-					createBusinessObject(1124, new WorldPoint(x, y, plane));
+					createRandomBusinessObject(new WorldPoint(x, y, plane));
 				}
 			}
 		}
@@ -67,15 +67,7 @@ public class BusinessManager
 			return;
 		}
 
-		// WIP
-		int modelId = getRandomModelIdOrNothing();
-
-		if (modelId == -1)
-		{
-			return;
-		}
-
-		RuneLiteObject newBusinessObject = createBusinessObject(modelId, worldPoint);
+		RuneLiteObject newBusinessObject = createRandomBusinessObject(worldPoint);
 
 		if (newBusinessObject == null)
 		{
@@ -150,8 +142,16 @@ public class BusinessManager
 		return yMapping.get(plane);
 	}
 
-	private RuneLiteObject createBusinessObject(int modelId, WorldPoint worldPoint)
+	// This function is not very well thought out, but it will do for now.
+	private RuneLiteObject createRandomBusinessObject(WorldPoint worldPoint)
 	{
+		int modelId = getRandomModelIdOrNothing();
+
+		if (modelId == -1)
+		{
+			return null;
+		}
+
 		RuneLiteObject newBusinessObject = client.createRuneLiteObject();
 		Model newBusinessModel = client.loadModel(modelId);
 
