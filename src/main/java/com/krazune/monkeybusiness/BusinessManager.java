@@ -12,10 +12,15 @@ import net.runelite.api.Model;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.eventbus.Subscribe;
 
 public class BusinessManager
 {
 	private Client client;
+
+	private EventBus eventBus;
 
 	private MonkeyBusinessPluginConfig config;
 
@@ -23,13 +28,21 @@ public class BusinessManager
 	private Map<Integer, Map<Integer, Map<Integer, RuneLiteObject>>> businessObjectsWorldPointMap; // X, Y, and Plane.
 
 	@Inject
-	public BusinessManager(Client client, MonkeyBusinessPluginConfig config)
+	public BusinessManager(Client client, EventBus eventBus, MonkeyBusinessPluginConfig config)
 	{
 		this.client = client;
+		this.eventBus = eventBus;
 		this.config = config;
+
+		eventBus.register(this);
 
 		businessObjects = new HashSet<>();
 		businessObjectsWorldPointMap = new HashMap<>();
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
 	}
 
 	public void doBusiness(WorldPoint worldPoint)
