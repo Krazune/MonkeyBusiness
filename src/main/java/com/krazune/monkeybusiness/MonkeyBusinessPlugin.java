@@ -1,11 +1,14 @@
 package com.krazune.monkeybusiness;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.kit.KitType;
@@ -34,9 +37,19 @@ public class MonkeyBusinessPlugin extends Plugin
 	@Inject
 	private BusinessManager businessManager;
 
+	private Queue<WorldPoint> worldPointsQueue;
+	private int worldPointsToBeProcessedNext = 0;
+
+	@Override
+	protected void startUp()
+	{
+		worldPointsQueue = new LinkedList<>();
+	}
+
 	@Override
 	protected void shutDown()
 	{
+		worldPointsQueue = null;
 		businessManager.clearAll();
 	}
 
@@ -44,6 +57,8 @@ public class MonkeyBusinessPlugin extends Plugin
 	public void onGameTick(GameTick tick)
 	{
 		List<Player> players = client.getPlayers();
+
+		processWorldPointsQueue();
 
 		for (int i = 0; i < players.size(); ++i)
 		{
@@ -54,7 +69,7 @@ public class MonkeyBusinessPlugin extends Plugin
 				continue;
 			}
 
-			businessManager.doBusiness(currentPlayer.getWorldLocation());
+			worldPointsQueue.add(currentPlayer.getWorldLocation());
 		}
 	}
 
@@ -69,6 +84,7 @@ public class MonkeyBusinessPlugin extends Plugin
 		}
 
 		businessManager.clearAll();
+		worldPointsQueue.clear();
 	}
 
 	private boolean playerHasCursedBanana(Player player)
@@ -86,5 +102,20 @@ public class MonkeyBusinessPlugin extends Plugin
 		}
 
 		return playerComposition.getEquipmentId(KitType.WEAPON) == CURSED_BANANA_ID;
+	}
+
+	private void processWorldPointsQueue()
+	{
+		if (worldPointsQueue.isEmpty())
+		{
+			return;
+		}
+
+		for (int i = 0; i < worldPointsToBeProcessedNext; ++i)
+		{
+			businessManager.doBusiness(worldPointsQueue.remove());
+		}
+
+		worldPointsToBeProcessedNext = worldPointsQueue.size();
 	}
 }
