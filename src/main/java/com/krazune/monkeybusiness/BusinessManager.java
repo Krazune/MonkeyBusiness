@@ -15,14 +15,19 @@ import net.runelite.api.coords.WorldPoint;
 
 public class BusinessManager
 {
-	@Inject
 	private Client client;
+
+	private MonkeyBusinessPluginConfig config;
 
 	private Set<RuneLiteObject> businessObjects;
 	private Map<Integer, Map<Integer, Map<Integer, RuneLiteObject>>> businessObjectsWorldPointMap; // X, Y, and Plane.
 
-	public BusinessManager()
+	@Inject
+	public BusinessManager(Client client, MonkeyBusinessPluginConfig config)
 	{
+		this.client = client;
+		this.config = config;
+
 		businessObjects = new HashSet<>();
 		businessObjectsWorldPointMap = new HashMap<>();
 	}
@@ -81,7 +86,7 @@ public class BusinessManager
 			return 11451;
 		}
 
-		if (randomInt < 100)
+		if (randomInt < 100 || config.continuousBusiness())
 		{
 			return 1124;
 		}

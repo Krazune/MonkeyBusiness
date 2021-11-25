@@ -1,5 +1,6 @@
 package com.krazune.monkeybusiness;
 
+import com.google.inject.Provides;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -12,6 +13,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.kit.KitType;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -85,6 +87,12 @@ public class MonkeyBusinessPlugin extends Plugin
 
 		businessManager.clearAll();
 		worldPointsQueue.clear();
+	}
+
+	@Provides
+	MonkeyBusinessPluginConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(MonkeyBusinessPluginConfig.class);
 	}
 
 	private boolean playerHasCursedBanana(Player player)
