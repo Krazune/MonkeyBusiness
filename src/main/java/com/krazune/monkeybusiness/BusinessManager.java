@@ -1,10 +1,7 @@
 package com.krazune.monkeybusiness;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.inject.Inject;
 import net.runelite.api.Client;
@@ -24,7 +21,6 @@ public class BusinessManager
 
 	private MonkeyBusinessPluginConfig config;
 
-	private Set<RuneLiteObject> businessObjects;
 	private Map<Integer, Map<Integer, Map<Integer, RuneLiteObject>>> businessObjectsWorldPointMap; // X, Y, and Plane.
 
 	@Inject
@@ -36,7 +32,6 @@ public class BusinessManager
 
 		eventBus.register(this);
 
-		businessObjects = new HashSet<>();
 		businessObjectsWorldPointMap = new HashMap<>();
 	}
 
@@ -109,14 +104,6 @@ public class BusinessManager
 
 	public void clearAll()
 	{
-		Iterator i = businessObjects.iterator();
-
-		while (i.hasNext())
-		{
-			((RuneLiteObject)i.next()).setActive(false);
-		}
-
-		businessObjects = new HashSet<>();
 		businessObjectsWorldPointMap = new HashMap<>();
 	}
 
@@ -164,17 +151,6 @@ public class BusinessManager
 	}
 
 	private void cacheBusinessObject(RuneLiteObject newBusinessObject)
-	{
-		addToBusinessObjects(newBusinessObject);
-		addToBusinessObjectsWorldPointMap(newBusinessObject);
-	}
-
-	private void addToBusinessObjects(RuneLiteObject newBusinessObject)
-	{
-		businessObjects.add(newBusinessObject);
-	}
-
-	private void addToBusinessObjectsWorldPointMap(RuneLiteObject newBusinessObject)
 	{
 		WorldPoint newBusinessObjectWorldPoint = WorldPoint.fromLocal(client, newBusinessObject.getLocation());
 
