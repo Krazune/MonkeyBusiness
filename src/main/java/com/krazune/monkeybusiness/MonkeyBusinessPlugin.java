@@ -27,6 +27,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 		"cursed",
 		"banana",
 		"poop"
+		// Smithing
 	}
 )
 public class MonkeyBusinessPlugin extends Plugin
