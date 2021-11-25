@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.inject.Inject;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.Model;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
@@ -30,7 +31,7 @@ public class BusinessManager
 		this.eventBus = eventBus;
 		this.config = config;
 
-		eventBus.register(this);
+		this.eventBus.register(this);
 
 		businessObjectsWorldPointMap = new HashMap<>();
 	}
@@ -38,6 +39,25 @@ public class BusinessManager
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
+		if (gameStateChanged.getGameState() != GameState.LOGGED_IN)
+		{
+			return;
+		}
+
+		for (Integer x : businessObjectsWorldPointMap.keySet())
+		{
+			Map<Integer, Map<Integer, RuneLiteObject>> yMap = businessObjectsWorldPointMap.get(x);
+
+			for (Integer y : yMap.keySet())
+			{
+				Map<Integer, RuneLiteObject> planeMap = yMap.get(y);
+
+				for (Integer plane : planeMap.keySet())
+				{
+					createBusinessObject(1124, new WorldPoint(x, y, plane));
+				}
+			}
+		}
 	}
 
 	public void doBusiness(WorldPoint worldPoint)
@@ -55,17 +75,12 @@ public class BusinessManager
 			return;
 		}
 
-		RuneLiteObject newBusinessObject = createBusinessObject(modelId);
+		RuneLiteObject newBusinessObject = createBusinessObject(modelId, worldPoint);
 
 		if (newBusinessObject == null)
 		{
 			return;
 		}
-
-		LocalPoint newBusinessLocalPoint = LocalPoint.fromWorld(client, worldPoint);
-
-		newBusinessObject.setLocation(newBusinessLocalPoint, worldPoint.getPlane());
-		newBusinessObject.setActive(true);
 
 		cacheBusinessObject(newBusinessObject);
 	}
@@ -135,7 +150,7 @@ public class BusinessManager
 		return yMapping.get(plane);
 	}
 
-	private RuneLiteObject createBusinessObject(int modelId)
+	private RuneLiteObject createBusinessObject(int modelId, WorldPoint worldPoint)
 	{
 		RuneLiteObject newBusinessObject = client.createRuneLiteObject();
 		Model newBusinessModel = client.loadModel(modelId);
@@ -146,6 +161,21 @@ public class BusinessManager
 		}
 
 		newBusinessObject.setModel(newBusinessModel);
+
+		if (newBusinessObject == null)
+		{
+			return null;
+		}
+
+		LocalPoint newBusinessLocalPoint = LocalPoint.fromWorld(client, worldPoint);
+
+		if (newBusinessLocalPoint == null)
+		{
+			return null;
+		}
+
+		newBusinessObject.setLocation(newBusinessLocalPoint, worldPoint.getPlane());
+		newBusinessObject.setActive(true);
 
 		return newBusinessObject;
 	}
