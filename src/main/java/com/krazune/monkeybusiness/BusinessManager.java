@@ -11,6 +11,7 @@ import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 
@@ -30,16 +31,32 @@ public class BusinessManager
 
 	private Map<Integer, Map<Integer, Map<Integer, RuneLiteObject>>> businessObjectsWorldPointMap; // X, Y, and Plane.
 
+	private int planeId;
+
 	@Inject
 	public BusinessManager(Client client, EventBus eventBus, MonkeyBusinessPluginConfig config)
 	{
 		this.client = client;
 		this.eventBus = eventBus;
 		this.config = config;
+		this.planeId = client.getPlane();
 
 		this.eventBus.register(this);
 
 		businessObjectsWorldPointMap = new HashMap<>();
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick tick)
+	{
+		if (planeId == client.getPlane())
+		{
+			return;
+		}
+
+		recreateObjects();
+
+		planeId = client.getPlane();
 	}
 
 	@Subscribe
@@ -50,20 +67,7 @@ public class BusinessManager
 			return;
 		}
 
-		for (Integer x : businessObjectsWorldPointMap.keySet())
-		{
-			Map<Integer, Map<Integer, RuneLiteObject>> yMap = businessObjectsWorldPointMap.get(x);
-
-			for (Integer y : yMap.keySet())
-			{
-				Map<Integer, RuneLiteObject> planeMap = yMap.get(y);
-
-				for (Integer plane : planeMap.keySet())
-				{
-					createRandomBusinessObject(new WorldPoint(x, y, plane));
-				}
-			}
-		}
+		recreateObjects();
 	}
 
 	public void doBusiness(WorldPoint worldPoint)
@@ -108,6 +112,24 @@ public class BusinessManager
 		}
 
 		businessObjectsWorldPointMap = new HashMap<>();
+	}
+
+	private void recreateObjects()
+	{
+		for (Integer x : businessObjectsWorldPointMap.keySet())
+		{
+			Map<Integer, Map<Integer, RuneLiteObject>> yMap = businessObjectsWorldPointMap.get(x);
+
+			for (Integer y : yMap.keySet())
+			{
+				Map<Integer, RuneLiteObject> planeMap = yMap.get(y);
+
+				for (Integer plane : planeMap.keySet())
+				{
+					createRandomBusinessObject(new WorldPoint(x, y, plane));
+				}
+			}
+		}
 	}
 
 	private int getRandomModelIdOrNothing(WorldPoint worldPoint)
