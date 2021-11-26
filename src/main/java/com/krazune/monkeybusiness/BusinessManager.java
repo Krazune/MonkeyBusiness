@@ -85,6 +85,28 @@ public class BusinessManager
 
 	public void clearAll()
 	{
+		for (Integer x : businessObjectsWorldPointMap.keySet())
+		{
+			Map<Integer, Map<Integer, RuneLiteObject>> yMap = businessObjectsWorldPointMap.get(x);
+
+			for (Integer y : yMap.keySet())
+			{
+				Map<Integer, RuneLiteObject> planeMap = yMap.get(y);
+
+				for (Integer plane : planeMap.keySet())
+				{
+					RuneLiteObject currentObject = planeMap.get(plane);
+
+					if (currentObject == null)
+					{
+						continue;
+					}
+
+					currentObject.setActive(false);
+				}
+			}
+		}
+
 		businessObjectsWorldPointMap = new HashMap<>();
 	}
 
