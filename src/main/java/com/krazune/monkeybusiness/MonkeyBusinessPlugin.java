@@ -43,19 +43,6 @@ public class MonkeyBusinessPlugin extends Plugin
 	private Queue<WorldPoint> worldPointsQueue;
 	private int worldPointsToBeProcessedNext = 0;
 
-	@Override
-	protected void startUp()
-	{
-		worldPointsQueue = new LinkedList<>();
-	}
-
-	@Override
-	protected void shutDown()
-	{
-		worldPointsQueue = null;
-		businessManager.clearAll();
-	}
-
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
@@ -88,6 +75,19 @@ public class MonkeyBusinessPlugin extends Plugin
 
 		businessManager.clearAll();
 		worldPointsQueue.clear();
+	}
+
+	@Override
+	protected void startUp()
+	{
+		worldPointsQueue = new LinkedList<>();
+	}
+
+	@Override
+	protected void shutDown()
+	{
+		worldPointsQueue = null;
+		businessManager.clearAll();
 	}
 
 	@Provides

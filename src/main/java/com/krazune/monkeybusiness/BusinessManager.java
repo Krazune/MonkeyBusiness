@@ -77,6 +77,11 @@ public class BusinessManager
 		cacheBusinessObject(newBusinessObject);
 	}
 
+	public void clearAll()
+	{
+		businessObjectsWorldPointMap = new HashMap<>();
+	}
+
 	private int getRandomModelIdOrNothing(WorldPoint worldPoint)
 	{
 		Random random = new Random(getRandomSeed(worldPoint));
@@ -116,11 +121,6 @@ public class BusinessManager
 		String worldPointString = "x" + worldPoint.getX() + "y" + worldPoint.getY() + "p" + worldPoint.getPlane();
 
 		return worldPointString.hashCode(); // This might cause predictable patterns.
-	}
-
-	public void clearAll()
-	{
-		businessObjectsWorldPointMap = new HashMap<>();
 	}
 
 	private boolean worldPointIsEmpty(WorldPoint worldPoint)
