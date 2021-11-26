@@ -16,6 +16,12 @@ import net.runelite.client.eventbus.Subscribe;
 
 public class BusinessManager
 {
+	private final int GIGANTIC_PILE = 1465;
+	private final int SMALL_PILE = 1757;
+	private final int MEDIUM_PEBBLES = 5690;
+	private final int SMALL_PEBBLES = 11451;
+	private final int FLOOR_MARKS = 1124;
+
 	private final Client client;
 
 	private final EventBus eventBus;
@@ -85,35 +91,45 @@ public class BusinessManager
 	private int getRandomModelIdOrNothing(WorldPoint worldPoint)
 	{
 		Random random = new Random(getRandomSeed(worldPoint));
+		int continueRandom = random.nextInt(3);
 
-		int randomInt = random.nextInt(1000); // Random int from 0 to 999.
-
-		if (randomInt == 1)
+		// One turd chance of returning no model:
+		// 	0 -> no model
+		// 	1 -> random model
+		// 	2 -> random model
+		if (continueRandom != 0)
 		{
-			return 1465;
+			return -1;
 		}
 
-		if (randomInt < 20)
+		int modelRandom = random.nextInt(100);
+
+		// 1% chance of getting chosen.
+		if (modelRandom == 0)
 		{
-			return 1757;
+			return GIGANTIC_PILE;
 		}
 
-		if (randomInt < 40)
+		// 15% chance of getting chosen.
+		if (modelRandom <= 15)
 		{
-			return 5690;
+			return SMALL_PILE;
 		}
 
-		if (randomInt < 60)
+		// 15% chance of getting chosen.
+		if (modelRandom <= 30)
 		{
-			return 11451;
+			return MEDIUM_PEBBLES;
 		}
 
-		if (randomInt < 100 || config.continuousBusiness())
+		// 30% chance of getting chosen.
+		if (modelRandom <= 60)
 		{
-			return 1124;
+			return SMALL_PEBBLES;
 		}
 
-		return -1;
+		// 39% chance of getting chosen.
+		return FLOOR_MARKS;
 	}
 
 	private int getRandomSeed(WorldPoint worldPoint)
@@ -158,7 +174,12 @@ public class BusinessManager
 
 		if (modelId == -1)
 		{
-			return null;
+			if (!config.continuousBusiness())
+			{
+				return null;
+			}
+
+			modelId = FLOOR_MARKS;
 		}
 
 		RuneLiteObject newBusinessObject = client.createRuneLiteObject();
