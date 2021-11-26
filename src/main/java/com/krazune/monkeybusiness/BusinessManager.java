@@ -171,11 +171,6 @@ public class BusinessManager
 
 		newBusinessObject.setModel(newBusinessModel);
 
-		if (newBusinessObject == null)
-		{
-			return null;
-		}
-
 		LocalPoint newBusinessLocalPoint = LocalPoint.fromWorld(client, worldPoint);
 
 		if (newBusinessLocalPoint == null)
