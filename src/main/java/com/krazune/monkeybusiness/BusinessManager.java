@@ -16,11 +16,11 @@ import net.runelite.client.eventbus.Subscribe;
 
 public class BusinessManager
 {
-	private Client client;
+	private final Client client;
 
-	private EventBus eventBus;
+	private final EventBus eventBus;
 
-	private MonkeyBusinessPluginConfig config;
+	private final MonkeyBusinessPluginConfig config;
 
 	private Map<Integer, Map<Integer, Map<Integer, RuneLiteObject>>> businessObjectsWorldPointMap; // X, Y, and Plane.
 
