@@ -2,7 +2,7 @@ package com.krazune.monkeybusiness;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -77,9 +77,11 @@ public class BusinessManager
 		cacheBusinessObject(newBusinessObject);
 	}
 
-	private int getRandomModelIdOrNothing()
+	private int getRandomModelIdOrNothing(WorldPoint worldPoint)
 	{
-		int randomInt = ThreadLocalRandom.current().nextInt(0, 1000); // Random int from 0 to 999.
+		Random random = new Random(getRandomSeed(worldPoint));
+
+		int randomInt = random.nextInt(1000); // Random int from 0 to 999.
 
 		if (randomInt == 1)
 		{
@@ -107,6 +109,13 @@ public class BusinessManager
 		}
 
 		return -1;
+	}
+
+	private int getRandomSeed(WorldPoint worldPoint)
+	{
+		String worldPointString = "x" + worldPoint.getX() + "y" + worldPoint.getY() + "p" + worldPoint.getPlane();
+
+		return worldPointString.hashCode(); // This might cause predictable patterns.
 	}
 
 	public void clearAll()
@@ -145,7 +154,7 @@ public class BusinessManager
 	// This function is not very well thought out, but it will do for now.
 	private RuneLiteObject createRandomBusinessObject(WorldPoint worldPoint)
 	{
-		int modelId = getRandomModelIdOrNothing();
+		int modelId = getRandomModelIdOrNothing(worldPoint);
 
 		if (modelId == -1)
 		{
