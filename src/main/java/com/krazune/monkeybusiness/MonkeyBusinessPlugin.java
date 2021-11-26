@@ -13,6 +13,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.kit.KitType;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -38,23 +39,13 @@ public class MonkeyBusinessPlugin extends Plugin
 	private Client client;
 
 	@Inject
+	private ClientThread clientThread;
+
+	@Inject
 	private BusinessManager businessManager;
 
 	private Queue<WorldPoint> worldPointsQueue;
 	private int worldPointsToBeProcessedNext = 0;
-
-	@Override
-	protected void startUp()
-	{
-		worldPointsQueue = new LinkedList<>();
-	}
-
-	@Override
-	protected void shutDown()
-	{
-		worldPointsQueue = null;
-		businessManager.clearAll();
-	}
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
@@ -88,6 +79,20 @@ public class MonkeyBusinessPlugin extends Plugin
 
 		businessManager.clearAll();
 		worldPointsQueue.clear();
+	}
+
+	@Override
+	protected void startUp()
+	{
+		worldPointsQueue = new LinkedList<>();
+	}
+
+	@Override
+	protected void shutDown()
+	{
+		worldPointsQueue = null;
+
+		clientThread.invokeLater(businessManager::clearAll);
 	}
 
 	@Provides
