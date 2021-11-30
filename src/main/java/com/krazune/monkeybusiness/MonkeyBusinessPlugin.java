@@ -92,7 +92,7 @@ public class MonkeyBusinessPlugin extends Plugin
 	{
 		worldPointsQueue = null;
 
-		clientThread.invoke(businessManager::clearAll);
+		businessManager.clearAll();
 	}
 
 	@Provides

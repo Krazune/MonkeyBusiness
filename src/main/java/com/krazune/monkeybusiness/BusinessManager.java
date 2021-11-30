@@ -9,12 +9,15 @@ import net.runelite.api.GameState;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 
 public class BusinessManager
 {
 	private final Client client;
+
+	private final ClientThread clientThread;
 
 	private final EventBus eventBus;
 
@@ -25,9 +28,10 @@ public class BusinessManager
 	private int planeId;
 
 	@Inject
-	public BusinessManager(Client client, EventBus eventBus, MonkeyBusinessPluginConfig config)
+	public BusinessManager(Client client, ClientThread clientThread, EventBus eventBus, MonkeyBusinessPluginConfig config)
 	{
 		this.client = client;
+		this.clientThread = clientThread;
 		this.eventBus = eventBus;
 		this.config = config;
 		this.planeId = client.getPlane();
@@ -100,7 +104,7 @@ public class BusinessManager
 						continue;
 					}
 
-					currentBusiness.despawn();
+					clientThread.invoke(currentBusiness::despawn);
 				}
 			}
 		}
