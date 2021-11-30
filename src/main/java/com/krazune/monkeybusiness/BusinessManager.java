@@ -118,7 +118,7 @@ public class BusinessManager
 						continue;
 					}
 
-					clientThread.invoke(currentBusiness::despawn);
+					clientThread.invokeLater(currentBusiness::despawn);
 				}
 			}
 		}
@@ -306,7 +306,7 @@ public class BusinessManager
 			return;
 		}
 
-		clientThread.invoke(business::despawn);
+		clientThread.invokeLater(business::despawn);
 
 		if (yMapping.size() == 1)
 		{
