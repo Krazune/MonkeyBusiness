@@ -1,6 +1,9 @@
 package com.krazune.monkeybusiness;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import javax.inject.Inject;
@@ -23,7 +26,10 @@ public class BusinessManager
 
 	private final MonkeyBusinessPluginConfig config;
 
+	private final Duration BUSINESS_DURATION = Duration.ofSeconds(10);
+
 	private Map<Integer, Map<Integer, Map<Integer, Business>>> businessLocations; // X, Y, and Plane.
+	private Map<Business, Instant> businessSpawnInstants;
 
 	private int planeId;
 
@@ -39,11 +45,14 @@ public class BusinessManager
 		this.eventBus.register(this);
 
 		businessLocations = new HashMap<>();
+		businessSpawnInstants = new HashMap<>();
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		removeOldBusiness();
+
 		if (planeId == client.getPlane())
 		{
 			return;
@@ -68,8 +77,12 @@ public class BusinessManager
 
 	public void doBusiness(WorldPoint worldPoint)
 	{
-		if (!worldPointIsEmpty(worldPoint))
+		Business existentBusiness = getBusinessFromBusinessLocations(worldPoint);
+
+		if (existentBusiness != null)
 		{
+			cacheBusinessInstant(existentBusiness);
+
 			return;
 		}
 
@@ -83,6 +96,7 @@ public class BusinessManager
 		newBusiness.spawn();
 
 		cacheBusiness(newBusiness);
+		cacheBusinessInstant(newBusiness);
 	}
 
 	public void clearAll()
@@ -110,6 +124,7 @@ public class BusinessManager
 		}
 
 		businessLocations = new HashMap<>();
+		businessSpawnInstants = new HashMap<>();
 	}
 
 	private void recreateObjects()
@@ -238,5 +253,74 @@ public class BusinessManager
 		businessLocations.putIfAbsent(x, new HashMap<>());
 		businessLocations.get(x).putIfAbsent(y, new HashMap<>());
 		businessLocations.get(x).get(y).putIfAbsent(plane, newBusiness);
+	}
+
+	private void cacheBusinessInstant(Business business)
+	{
+		businessSpawnInstants.put(business, Instant.now());
+	}
+
+	private void removeOldBusiness()
+	{
+		Iterator<Business> i = businessSpawnInstants.keySet().iterator();
+
+		while (i.hasNext())
+		{
+			Business currentBusiness = i.next();
+
+			if (isOldBusiness(businessSpawnInstants.get(currentBusiness)))
+			{
+				i.remove(); // This should be moved to the business removal function.
+
+				removeBusiness(currentBusiness);
+			}
+		}
+	}
+
+	private void removeBusiness(Business business)
+	{
+		WorldPoint businessLocation = business.getLocation();
+
+		int x = businessLocation.getX();
+		int y = businessLocation.getY();
+		int plane = businessLocation.getPlane();
+
+		Map<Integer, Map<Integer, Business>> xMapping = businessLocations.get(x);
+
+		if (xMapping == null)
+		{
+			return;
+		}
+
+		Map<Integer, Business> yMapping = xMapping.get(y);
+
+		if (yMapping == null)
+		{
+			return;
+		}
+
+		Business cachedBusiness = yMapping.get(plane);
+
+		if (business != cachedBusiness)
+		{
+			return;
+		}
+
+		clientThread.invoke(business::despawn);
+
+		if (yMapping.size() == 1)
+		{
+			xMapping.remove(y);
+		}
+
+		if (xMapping.isEmpty())
+		{
+			businessLocations.remove(x);
+		}
+	}
+
+	private boolean isOldBusiness(Instant spawnInstant)
+	{
+		return Duration.between(spawnInstant, Instant.now()).compareTo(BUSINESS_DURATION) >= 0;
 	}
 }
