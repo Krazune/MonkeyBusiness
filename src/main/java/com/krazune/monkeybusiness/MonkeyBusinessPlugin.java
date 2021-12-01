@@ -48,7 +48,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @PluginDescriptor(
 	name = "Monkey Business",
-	description = "This plugin lets you do your monkey business.",
+	description = "This plugin lets you do your monkey business, when wielding a cursed banana.",
 	tags = {
 		"monkey",
 		"business",
