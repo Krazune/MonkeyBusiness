@@ -237,7 +237,7 @@ public class BusinessManager
 
 	private int getRandomSeed(WorldPoint worldPoint)
 	{
-		String worldPointString = "x" + worldPoint.getX() + "y" + worldPoint.getY() + "p" + worldPoint.getPlane();
+		String worldPointString = "w" + client.getWorld() + "x" + worldPoint.getX() + "y" + worldPoint.getY() + "p" + worldPoint.getPlane();
 
 		return worldPointString.hashCode(); // This might cause predictable patterns.
 	}
