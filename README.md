@@ -1,5 +1,5 @@
 # Monkey Business
-RuneLite plugin that lets you do your monkey business.
+RuneLite plugin that lets you do your monkey business, when wielding a [cursed banana](https://oldschool.runescape.wiki/w/Cursed_banana).
 
 ## Version
 Current version: **2021.12.1**
