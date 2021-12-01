@@ -81,7 +81,7 @@ public class BusinessManager
 
 		if (existentBusiness != null)
 		{
-			cacheBusinessInstant(existentBusiness);
+			addBusinessInstant(existentBusiness);
 
 			return;
 		}
@@ -95,8 +95,8 @@ public class BusinessManager
 
 		newBusiness.spawn();
 
-		cacheBusiness(newBusiness);
-		cacheBusinessInstant(newBusiness);
+		addBusinessLocation(newBusiness);
+		addBusinessInstant(newBusiness);
 	}
 
 	public void clearAll()
@@ -237,12 +237,12 @@ public class BusinessManager
 
 	private int getRandomSeed(WorldPoint worldPoint)
 	{
-		String worldPointString = "x" + worldPoint.getX() + "y" + worldPoint.getY() + "p" + worldPoint.getPlane();
+		String worldPointString = "w" + client.getWorld() + "x" + worldPoint.getX() + "y" + worldPoint.getY() + "p" + worldPoint.getPlane();
 
 		return worldPointString.hashCode(); // This might cause predictable patterns.
 	}
 
-	private void cacheBusiness(Business newBusiness)
+	private void addBusinessLocation(Business newBusiness)
 	{
 		WorldPoint newBusinessLocation = newBusiness.getLocation();
 
@@ -255,7 +255,7 @@ public class BusinessManager
 		businessLocations.get(x).get(y).putIfAbsent(plane, newBusiness);
 	}
 
-	private void cacheBusinessInstant(Business business)
+	private void addBusinessInstant(Business business)
 	{
 		businessSpawnInstants.put(business, Instant.now());
 	}
