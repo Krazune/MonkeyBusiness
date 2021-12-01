@@ -26,7 +26,7 @@ public class BusinessManager
 
 	private final MonkeyBusinessPluginConfig config;
 
-	private final Duration BUSINESS_DURATION = Duration.ofSeconds(10);
+	private final Duration BUSINESS_DURATION = Duration.ofMinutes(1);
 
 	private Map<Integer, Map<Integer, Map<Integer, Business>>> businessLocations; // X, Y, and Plane.
 	private Map<Business, Instant> businessSpawnInstants;
