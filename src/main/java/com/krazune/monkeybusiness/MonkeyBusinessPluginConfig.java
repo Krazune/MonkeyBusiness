@@ -15,6 +15,6 @@ public interface MonkeyBusinessPluginConfig extends Config
 	)
 	default boolean continuousBusiness()
 	{
-		return false;
+		return true;
 	}
 }
