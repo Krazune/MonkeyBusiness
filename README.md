@@ -8,6 +8,7 @@ Current version: **2021.12.1**
 
 ## Plugin in action
 ![Business demo](resources/monkeybusiness.gif)
+
 *The randomness is based on player location, and server world, which means that it will look the same for everyone around you (that has the plugin enabled).*
 
 ## Configurations
