@@ -32,6 +32,7 @@ import net.runelite.api.Model;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.callback.ClientThread;
 
 public class Business
 {
@@ -39,12 +40,14 @@ public class Business
 	private final BusinessType type;
 
 	private final Client client;
+	private final ClientThread clientThread;
 
 	private RuneLiteObject object;
 
-	public Business(Client client, WorldPoint location, BusinessType type)
+	public Business(Client client, ClientThread clientThread, WorldPoint location, BusinessType type)
 	{
 		this.client = client;
+		this.clientThread = clientThread;
 		this.location = location;
 		this.type = type;
 	}
@@ -97,7 +100,18 @@ public class Business
 			return;
 		}
 
-		object.setActive(false);
+		if (client.isClientThread())
+		{
+			object.setActive(false);
+		}
+		{
+			final RuneLiteObject objectToBeDisabled = object;
+
+			clientThread.invokeLater(() ->
+			{
+				objectToBeDisabled.setActive(false);
+			});
+		}
 
 		object = null;
 	}

@@ -145,7 +145,7 @@ public class BusinessManager
 						continue;
 					}
 
-					clientThread.invokeLater(currentBusiness::despawn);
+					currentBusiness.despawn();
 				}
 			}
 		}
@@ -215,7 +215,7 @@ public class BusinessManager
 			newBusinessType = BusinessType.FLOOR_MARKS;
 		}
 
-		return new Business(client, worldPoint, newBusinessType);
+		return new Business(client, clientThread, worldPoint, newBusinessType);
 	}
 
 	private BusinessType getRandomBusinessTypeOrNull(WorldPoint worldPoint)
@@ -333,7 +333,7 @@ public class BusinessManager
 			return;
 		}
 
-		clientThread.invokeLater(business::despawn);
+		business.despawn();
 
 		if (yMapping.size() == 1)
 		{
