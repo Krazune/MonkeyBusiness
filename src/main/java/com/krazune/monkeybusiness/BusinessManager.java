@@ -55,7 +55,7 @@ public class BusinessManager
 
 	private final Duration BUSINESS_DURATION = Duration.ofMinutes(1);
 
-	private Map<Integer, Map<Integer, Map<Integer, Business>>> businessLocations; // X, Y, and Plane.
+	private Map<WorldPoint, Business> businessLocations;
 	private Map<Business, Instant> businessSpawnInstants;
 
 	private int planeId;
@@ -85,7 +85,7 @@ public class BusinessManager
 			return;
 		}
 
-		recreateObjects();
+		spawnAll();
 
 		planeId = client.getPlane();
 	}
@@ -99,12 +99,12 @@ public class BusinessManager
 			return;
 		}
 
-		recreateObjects();
+		spawnAll();
 	}
 
 	public void doBusiness(WorldPoint worldPoint)
 	{
-		Business existentBusiness = getBusinessFromBusinessLocations(worldPoint);
+		Business existentBusiness = businessLocations.get(worldPoint);
 
 		if (existentBusiness != null)
 		{
@@ -122,82 +122,32 @@ public class BusinessManager
 
 		newBusiness.spawn();
 
-		addBusinessLocation(newBusiness);
+		businessLocations.put(newBusiness.getLocation(), newBusiness);
 		addBusinessInstant(newBusiness);
+	}
+
+	public void spawnAll()
+	{
+		for (Business business : businessLocations.values())
+		{
+			business.spawn();
+		}
+	}
+
+	public void despawnAll()
+	{
+		for (Business business : businessLocations.values())
+		{
+			business.despawn();
+		}
 	}
 
 	public void clearAll()
 	{
-		for (Integer x : businessLocations.keySet())
-		{
-			Map<Integer, Map<Integer, Business>> yMap = businessLocations.get(x);
-
-			for (Integer y : yMap.keySet())
-			{
-				Map<Integer, Business> planeMap = yMap.get(y);
-
-				for (Integer plane : planeMap.keySet())
-				{
-					Business currentBusiness = planeMap.get(plane);
-
-					if (currentBusiness == null)
-					{
-						continue;
-					}
-
-					currentBusiness.despawn();
-				}
-			}
-		}
+		despawnAll();
 
 		businessLocations = new HashMap<>();
 		businessSpawnInstants = new HashMap<>();
-	}
-
-	private void recreateObjects()
-	{
-		for (Integer x : businessLocations.keySet())
-		{
-			Map<Integer, Map<Integer, Business>> yMap = businessLocations.get(x);
-
-			for (Integer y : yMap.keySet())
-			{
-				Map<Integer, Business> planeMap = yMap.get(y);
-
-				for (Integer plane : planeMap.keySet())
-				{
-					planeMap.get(plane).spawn();
-				}
-			}
-		}
-	}
-
-	private boolean worldPointIsEmpty(WorldPoint worldPoint)
-	{
-		return getBusinessFromBusinessLocations(worldPoint) == null;
-	}
-
-	private Business getBusinessFromBusinessLocations(WorldPoint worldPoint)
-	{
-		int x = worldPoint.getX();
-		int y = worldPoint.getY();
-		int plane = worldPoint.getPlane();
-
-		Map<Integer, Map<Integer, Business>> xMapping = businessLocations.get(x);
-
-		if (xMapping == null)
-		{
-			return null;
-		}
-
-		Map<Integer, Business> yMapping = xMapping.get(y);
-
-		if (yMapping == null)
-		{
-			return null;
-		}
-
-		return yMapping.get(plane);
 	}
 
 	// This function is not very well thought out, but it will do for now.
@@ -269,19 +219,6 @@ public class BusinessManager
 		return worldPointString.hashCode(); // This might cause predictable patterns.
 	}
 
-	private void addBusinessLocation(Business newBusiness)
-	{
-		WorldPoint newBusinessLocation = newBusiness.getLocation();
-
-		int x = newBusinessLocation.getX();
-		int y = newBusinessLocation.getY();
-		int plane = newBusinessLocation.getPlane();
-
-		businessLocations.putIfAbsent(x, new HashMap<>());
-		businessLocations.get(x).putIfAbsent(y, new HashMap<>());
-		businessLocations.get(x).get(y).putIfAbsent(plane, newBusiness);
-	}
-
 	private void addBusinessInstant(Business business)
 	{
 		businessSpawnInstants.put(business, Instant.now());
@@ -307,26 +244,12 @@ public class BusinessManager
 	private void removeBusiness(Business business)
 	{
 		WorldPoint businessLocation = business.getLocation();
+		Business cachedBusiness = businessLocations.get(businessLocation);
 
-		int x = businessLocation.getX();
-		int y = businessLocation.getY();
-		int plane = businessLocation.getPlane();
-
-		Map<Integer, Map<Integer, Business>> xMapping = businessLocations.get(x);
-
-		if (xMapping == null)
+		if (cachedBusiness == null)
 		{
 			return;
 		}
-
-		Map<Integer, Business> yMapping = xMapping.get(y);
-
-		if (yMapping == null)
-		{
-			return;
-		}
-
-		Business cachedBusiness = yMapping.get(plane);
 
 		if (business != cachedBusiness)
 		{
@@ -335,15 +258,7 @@ public class BusinessManager
 
 		business.despawn();
 
-		if (yMapping.size() == 1)
-		{
-			xMapping.remove(y);
-		}
-
-		if (xMapping.isEmpty())
-		{
-			businessLocations.remove(x);
-		}
+		businessLocations.remove(business);
 	}
 
 	private boolean isOldBusiness(Instant spawnInstant)
