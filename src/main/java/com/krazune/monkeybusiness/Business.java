@@ -27,6 +27,8 @@
  */
 package com.krazune.monkeybusiness;
 
+import java.time.Duration;
+import java.time.Instant;
 import net.runelite.api.Client;
 import net.runelite.api.Model;
 import net.runelite.api.RuneLiteObject;
@@ -36,6 +38,8 @@ import net.runelite.client.callback.ClientThread;
 
 public class Business
 {
+	private final Duration MODEL_LOAD_TIMEOUT_DURATION = Duration.ofSeconds(1);
+
 	private final WorldPoint location;
 	private final BusinessType type;
 
@@ -62,35 +66,44 @@ public class Business
 		return type;
 	}
 
-	public boolean spawn()
+	public void spawn()
 	{
-		if (object != null)
-		{
-			object.setActive(false);
-		}
+		despawn();
 
 		LocalPoint localLocation = LocalPoint.fromWorld(client, location);
 
 		if (localLocation == null)
 		{
-			return false;
+			return;
 		}
 
 		RuneLiteObject newObject = client.createRuneLiteObject();
-		Model newModel = loadModel();
+		Model newModel = client.loadModel(type.getValue());
 
 		if (newModel == null)
 		{
-			return false;
+			repeatingModelLoading(newObject, type.getValue());
+		}
+		else
+		{
+			newObject.setModel(newModel);
 		}
 
 		newObject.setLocation(localLocation, location.getPlane());
-		newObject.setModel(newModel);
-		newObject.setActive(true);
+
+		if (client.isClientThread())
+		{
+			newObject.setActive(true);
+		}
+		else
+		{
+			clientThread.invokeLater(() ->
+			{
+				newObject.setActive(true);
+			});
+		}
 
 		this.object = newObject;
-
-		return true;
 	}
 
 	public void despawn()
@@ -116,8 +129,27 @@ public class Business
 		object = null;
 	}
 
-	private Model loadModel()
+	private void repeatingModelLoading(RuneLiteObject object, int modelId)
 	{
-		return client.loadModel(type.getValue());
+		final Instant loadTimeoutInstant = Instant.now().plus(MODEL_LOAD_TIMEOUT_DURATION);
+
+		clientThread.invokeLater(() ->
+		{
+			if (Instant.now().isAfter(loadTimeoutInstant))
+			{
+				return true;
+			}
+
+			Model newModel = client.loadModel(modelId);
+
+			if (newModel == null)
+			{
+				return false;
+			}
+
+			object.setModel(newModel);
+
+			return true;
+		});
 	}
 }
