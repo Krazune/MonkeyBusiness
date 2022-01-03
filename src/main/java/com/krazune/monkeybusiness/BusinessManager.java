@@ -120,7 +120,7 @@ public class BusinessManager
 			return;
 		}
 
-		newBusiness.spawn();
+		newBusiness.setActive(true);
 
 		businessLocations.put(newBusiness.getLocation(), newBusiness);
 		addBusinessInstant(newBusiness);
@@ -130,7 +130,7 @@ public class BusinessManager
 	{
 		for (Business business : businessLocations.values())
 		{
-			business.spawn();
+			business.setActive(true);
 		}
 	}
 
@@ -138,7 +138,7 @@ public class BusinessManager
 	{
 		for (Business business : businessLocations.values())
 		{
-			business.despawn();
+			business.setActive(false);
 		}
 	}
 
@@ -256,7 +256,7 @@ public class BusinessManager
 			return;
 		}
 
-		business.despawn();
+		business.setActive(false);
 
 		businessLocations.remove(business);
 	}
