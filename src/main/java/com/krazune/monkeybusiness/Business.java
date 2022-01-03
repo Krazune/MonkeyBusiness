@@ -64,6 +64,7 @@ public class Business
 		this.eventBus = eventBus;
 		this.location = location;
 		this.type = type;
+		this.lastTickPlaneId = client.getPlane();
 	}
 
 	public WorldPoint getLocation()
