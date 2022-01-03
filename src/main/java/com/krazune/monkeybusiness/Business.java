@@ -35,6 +35,7 @@ import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -53,6 +54,8 @@ public class Business
 	private boolean isActive;
 
 	private RuneLiteObject object;
+
+	private int lastTickPlaneId;
 
 	public Business(Client client, ClientThread clientThread, EventBus eventBus, WorldPoint location, BusinessType type)
 	{
@@ -93,6 +96,17 @@ public class Business
 		}
 
 		deactivate();
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick tick)
+	{
+		if (isActive && lastTickPlaneId != client.getPlane())
+		{
+			spawn();
+		}
+
+		lastTickPlaneId = client.getPlane();
 	}
 
 	@Subscribe
