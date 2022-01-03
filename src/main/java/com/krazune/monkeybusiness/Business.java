@@ -34,7 +34,10 @@ import net.runelite.api.Model;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.eventbus.Subscribe;
 
 public class Business
 {
@@ -45,15 +48,17 @@ public class Business
 
 	private final Client client;
 	private final ClientThread clientThread;
+	private final EventBus eventBus;
 
 	private boolean isActive;
 
 	private RuneLiteObject object;
 
-	public Business(Client client, ClientThread clientThread, WorldPoint location, BusinessType type)
+	public Business(Client client, ClientThread clientThread, EventBus eventBus, WorldPoint location, BusinessType type)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
+		this.eventBus = eventBus;
 		this.location = location;
 		this.type = type;
 	}
@@ -90,11 +95,27 @@ public class Business
 		deactivate();
 	}
 
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		switch (gameStateChanged.getGameState())
+		{
+			case LOADING:
+				despawn();
+				break;
+
+			case LOGGED_IN:
+				spawn();
+				break;
+		}
+	}
+
 	private void activate()
 	{
 		isActive = true;
 
 		spawn();
+		eventBus.register(this);
 	}
 
 	private void deactivate()
@@ -102,6 +123,7 @@ public class Business
 		isActive = false;
 
 		despawn();
+		eventBus.unregister(this);
 	}
 
 	private void spawn()
