@@ -46,6 +46,8 @@ public class Business
 	private final Client client;
 	private final ClientThread clientThread;
 
+	private boolean isActive;
+
 	private RuneLiteObject object;
 
 	public Business(Client client, ClientThread clientThread, WorldPoint location, BusinessType type)
@@ -66,7 +68,43 @@ public class Business
 		return type;
 	}
 
-	public void spawn()
+	public boolean isActive()
+	{
+		return isActive;
+	}
+
+	public void setActive(boolean isActive)
+	{
+		if (this.isActive == isActive)
+		{
+			return;
+		}
+
+		if (isActive)
+		{
+			activate();
+
+			return;
+		}
+
+		deactivate();
+	}
+
+	private void activate()
+	{
+		isActive = true;
+
+		spawn();
+	}
+
+	private void deactivate()
+	{
+		isActive = false;
+
+		despawn();
+	}
+
+	private void spawn()
 	{
 		despawn();
 
@@ -106,7 +144,7 @@ public class Business
 		this.object = newObject;
 	}
 
-	public void despawn()
+	private void despawn()
 	{
 		if (object == null)
 		{
