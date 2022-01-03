@@ -64,6 +64,8 @@ public class BusinessManager
 		this.eventBus = eventBus;
 		this.config = config;
 
+		this.eventBus.register(this);
+
 		businessLocations = new HashMap<>();
 		businessSpawnInstants = new HashMap<>();
 	}
