@@ -35,9 +35,7 @@ import java.util.Map;
 import java.util.Random;
 import javax.inject.Inject;
 import net.runelite.api.Client;
-import net.runelite.api.GameState;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
@@ -58,8 +56,6 @@ public class BusinessManager
 	private Map<WorldPoint, Business> businessLocations;
 	private Map<Business, Instant> businessSpawnInstants;
 
-	private int planeId;
-
 	@Inject
 	public BusinessManager(Client client, ClientThread clientThread, EventBus eventBus, MonkeyBusinessPluginConfig config)
 	{
@@ -67,9 +63,6 @@ public class BusinessManager
 		this.clientThread = clientThread;
 		this.eventBus = eventBus;
 		this.config = config;
-		this.planeId = client.getPlane();
-
-		this.eventBus.register(this);
 
 		businessLocations = new HashMap<>();
 		businessSpawnInstants = new HashMap<>();
@@ -79,27 +72,6 @@ public class BusinessManager
 	public void onGameTick(GameTick tick)
 	{
 		removeOldBusiness();
-
-		if (planeId == client.getPlane())
-		{
-			return;
-		}
-
-		spawnAll();
-
-		planeId = client.getPlane();
-	}
-
-	@Subscribe
-	public void onGameStateChanged(GameStateChanged gameStateChanged)
-	{
-		// The objects disappear on game state LOGGED_IN change.
-		if (gameStateChanged.getGameState() != GameState.LOGGED_IN)
-		{
-			return;
-		}
-
-		spawnAll();
 	}
 
 	public void doBusiness(WorldPoint worldPoint)
@@ -120,31 +92,31 @@ public class BusinessManager
 			return;
 		}
 
-		newBusiness.spawn();
+		newBusiness.setActive(true);
 
 		businessLocations.put(newBusiness.getLocation(), newBusiness);
 		addBusinessInstant(newBusiness);
 	}
 
-	public void spawnAll()
+	public void activateAll()
 	{
 		for (Business business : businessLocations.values())
 		{
-			business.spawn();
+			business.setActive(true);
 		}
 	}
 
-	public void despawnAll()
+	public void deactivateAll()
 	{
 		for (Business business : businessLocations.values())
 		{
-			business.despawn();
+			business.setActive(false);
 		}
 	}
 
 	public void clearAll()
 	{
-		despawnAll();
+		deactivateAll();
 
 		businessLocations = new HashMap<>();
 		businessSpawnInstants = new HashMap<>();
@@ -165,7 +137,7 @@ public class BusinessManager
 			newBusinessType = BusinessType.FLOOR_MARKS;
 		}
 
-		return new Business(client, clientThread, worldPoint, newBusinessType);
+		return new Business(client, clientThread, eventBus, worldPoint, newBusinessType);
 	}
 
 	private BusinessType getRandomBusinessTypeOrNull(WorldPoint worldPoint)
@@ -256,7 +228,7 @@ public class BusinessManager
 			return;
 		}
 
-		business.despawn();
+		business.setActive(false);
 
 		businessLocations.remove(business);
 	}

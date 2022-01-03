@@ -34,7 +34,11 @@ import net.runelite.api.Model;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.eventbus.Subscribe;
 
 public class Business
 {
@@ -45,15 +49,22 @@ public class Business
 
 	private final Client client;
 	private final ClientThread clientThread;
+	private final EventBus eventBus;
+
+	private boolean isActive;
 
 	private RuneLiteObject object;
 
-	public Business(Client client, ClientThread clientThread, WorldPoint location, BusinessType type)
+	private int lastTickPlaneId;
+
+	public Business(Client client, ClientThread clientThread, EventBus eventBus, WorldPoint location, BusinessType type)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
+		this.eventBus = eventBus;
 		this.location = location;
 		this.type = type;
+		this.lastTickPlaneId = client.getPlane();
 	}
 
 	public WorldPoint getLocation()
@@ -66,7 +77,71 @@ public class Business
 		return type;
 	}
 
-	public void spawn()
+	public boolean isActive()
+	{
+		return isActive;
+	}
+
+	public void setActive(boolean isActive)
+	{
+		if (this.isActive == isActive)
+		{
+			return;
+		}
+
+		if (isActive)
+		{
+			activate();
+
+			return;
+		}
+
+		deactivate();
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick tick)
+	{
+		if (isActive && lastTickPlaneId != client.getPlane())
+		{
+			spawn();
+		}
+
+		lastTickPlaneId = client.getPlane();
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		switch (gameStateChanged.getGameState())
+		{
+			case LOADING:
+				despawn();
+				break;
+
+			case LOGGED_IN:
+				spawn();
+				break;
+		}
+	}
+
+	private void activate()
+	{
+		isActive = true;
+
+		spawn();
+		eventBus.register(this);
+	}
+
+	private void deactivate()
+	{
+		isActive = false;
+
+		despawn();
+		eventBus.unregister(this);
+	}
+
+	private void spawn()
 	{
 		despawn();
 
@@ -106,7 +181,7 @@ public class Business
 		this.object = newObject;
 	}
 
-	public void despawn()
+	private void despawn()
 	{
 		if (object == null)
 		{
