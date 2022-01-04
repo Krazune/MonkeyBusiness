@@ -24,7 +24,7 @@ dependencies {
 }
 
 group = 'com.krazune'
-version = '2021.12.1'
+version = '2022.01.1'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
