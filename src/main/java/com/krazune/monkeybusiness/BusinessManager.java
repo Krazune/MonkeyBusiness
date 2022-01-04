@@ -232,7 +232,7 @@ public class BusinessManager
 
 		business.setActive(false);
 
-		businessLocations.remove(business);
+		businessLocations.remove(businessLocation);
 	}
 
 	private boolean isOldBusiness(Instant spawnInstant)
