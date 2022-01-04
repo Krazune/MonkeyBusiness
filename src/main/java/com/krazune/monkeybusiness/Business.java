@@ -192,6 +192,7 @@ public class Business
 		{
 			object.setActive(false);
 		}
+		else
 		{
 			final RuneLiteObject objectToBeDisabled = object;
 
