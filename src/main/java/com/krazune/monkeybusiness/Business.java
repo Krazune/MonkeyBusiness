@@ -27,26 +27,44 @@
  */
 package com.krazune.monkeybusiness;
 
+import java.time.Duration;
+import java.time.Instant;
 import net.runelite.api.Client;
 import net.runelite.api.Model;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.eventbus.Subscribe;
 
 public class Business
 {
+	private final Duration MODEL_LOAD_TIMEOUT_DURATION = Duration.ofSeconds(1);
+
 	private final WorldPoint location;
 	private final BusinessType type;
 
 	private final Client client;
+	private final ClientThread clientThread;
+	private final EventBus eventBus;
+
+	private boolean isActive;
 
 	private RuneLiteObject object;
 
-	public Business(Client client, WorldPoint location, BusinessType type)
+	private int lastTickPlaneId;
+
+	public Business(Client client, ClientThread clientThread, EventBus eventBus, WorldPoint location, BusinessType type)
 	{
 		this.client = client;
+		this.clientThread = clientThread;
+		this.eventBus = eventBus;
 		this.location = location;
 		this.type = type;
+		this.lastTickPlaneId = client.getPlane();
 	}
 
 	public WorldPoint getLocation()
@@ -59,51 +77,155 @@ public class Business
 		return type;
 	}
 
-	public boolean spawn()
+	public boolean isActive()
 	{
-		if (object != null)
+		return isActive;
+	}
+
+	public void setActive(boolean isActive)
+	{
+		if (this.isActive == isActive)
 		{
-			object.setActive(false);
+			return;
 		}
+
+		if (isActive)
+		{
+			activate();
+
+			return;
+		}
+
+		deactivate();
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick tick)
+	{
+		if (isActive && lastTickPlaneId != client.getPlane())
+		{
+			spawn();
+		}
+
+		lastTickPlaneId = client.getPlane();
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		switch (gameStateChanged.getGameState())
+		{
+			case LOADING:
+				despawn();
+				break;
+
+			case LOGGED_IN:
+				spawn();
+				break;
+		}
+	}
+
+	private void activate()
+	{
+		isActive = true;
+
+		spawn();
+		eventBus.register(this);
+	}
+
+	private void deactivate()
+	{
+		isActive = false;
+
+		despawn();
+		eventBus.unregister(this);
+	}
+
+	private void spawn()
+	{
+		despawn();
 
 		LocalPoint localLocation = LocalPoint.fromWorld(client, location);
 
 		if (localLocation == null)
 		{
-			return false;
+			return;
 		}
 
 		RuneLiteObject newObject = client.createRuneLiteObject();
-		Model newModel = loadModel();
+		Model newModel = client.loadModel(type.getValue());
 
 		if (newModel == null)
 		{
-			return false;
+			repeatingModelLoading(newObject, type.getValue());
+		}
+		else
+		{
+			newObject.setModel(newModel);
 		}
 
 		newObject.setLocation(localLocation, location.getPlane());
-		newObject.setModel(newModel);
-		newObject.setActive(true);
+
+		if (client.isClientThread())
+		{
+			newObject.setActive(true);
+		}
+		else
+		{
+			clientThread.invokeLater(() ->
+			{
+				newObject.setActive(true);
+			});
+		}
 
 		this.object = newObject;
-
-		return true;
 	}
 
-	public void despawn()
+	private void despawn()
 	{
 		if (object == null)
 		{
 			return;
 		}
 
-		object.setActive(false);
+		if (client.isClientThread())
+		{
+			object.setActive(false);
+		}
+		else
+		{
+			final RuneLiteObject objectToBeDisabled = object;
+
+			clientThread.invokeLater(() ->
+			{
+				objectToBeDisabled.setActive(false);
+			});
+		}
 
 		object = null;
 	}
 
-	private Model loadModel()
+	private void repeatingModelLoading(RuneLiteObject object, int modelId)
 	{
-		return client.loadModel(type.getValue());
+		final Instant loadTimeoutInstant = Instant.now().plus(MODEL_LOAD_TIMEOUT_DURATION);
+
+		clientThread.invokeLater(() ->
+		{
+			if (Instant.now().isAfter(loadTimeoutInstant))
+			{
+				return true;
+			}
+
+			Model newModel = client.loadModel(modelId);
+
+			if (newModel == null)
+			{
+				return false;
+			}
+
+			object.setModel(newModel);
+
+			return true;
+		});
 	}
 }
